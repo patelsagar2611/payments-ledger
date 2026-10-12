@@ -21,6 +21,7 @@ module-name = "payments"
 
 [tool.mypy]
 strict = true
+warn_unused_ignores = true
 
 [tool.ruff.lint]
 select = [
@@ -34,5 +35,6 @@ select = [
 [dependency-groups]
 dev = [
     "mypy>=2.4.0",
+    "pytest>=9.1.1",
     "ruff>=0.16.10",
 ]
