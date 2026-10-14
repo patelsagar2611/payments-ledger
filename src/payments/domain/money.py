@@ -8,17 +8,19 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Self
 
+from payments.domain.errors import DomainError
+
 
 class Currency(StrEnum):
     INR = "INR"
     USD = "USD"
 
 
-class CurrencyMismatchError(ValueError):
+class CurrencyMismatchError(DomainError, ValueError):
     """Raised when combining amounts in different currencies."""
 
 
-class CurrencyInvalidError(TypeError):
+class CurrencyInvalidError(DomainError, TypeError):
     """Raised when a currency is not a member of Currency."""
 
 
@@ -42,3 +44,6 @@ class Money:
                 f"{self.currency} and {other.currency}"
             )
         return type(self)(self.amount_minor + other.amount_minor, self.currency)
+
+    def __neg__(self) -> Self:
+        return type(self)(-self.amount_minor, self.currency)
