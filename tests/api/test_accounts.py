@@ -31,7 +31,7 @@ async def test_create_valid_account(client: AsyncClient) -> None:
             "name": "test_account",
             "currency": "INR",
             "kind": "CUSTOMER",
-            "requires_funds": "true",
+            "requires_funds": True,
         },
     )
 
@@ -42,7 +42,7 @@ async def test_create_valid_account(client: AsyncClient) -> None:
     assert body["name"] == "test_account"
     assert body["currency"] == "INR"
     assert body["kind"] == "CUSTOMER"
-    assert body["requires_funds"]
+    assert body["requires_funds"] is True
 
 
 async def test_get_valid_account(client: AsyncClient) -> None:
@@ -53,7 +53,7 @@ async def test_get_valid_account(client: AsyncClient) -> None:
             "name": "test_account",
             "currency": "INR",
             "kind": "CUSTOMER",
-            "requires_funds": "true",
+            "requires_funds": True,
         },
     )
 
@@ -83,7 +83,7 @@ async def test_create_invalid_account(client: AsyncClient) -> None:
             "name": " ",
             "currency": "INR",
             "kind": "CUSTOMER",
-            "requires_funds": "true",
+            "requires_funds": True,
         },
     )
 
