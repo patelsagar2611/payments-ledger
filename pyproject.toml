@@ -7,7 +7,9 @@ authors = [
     { name = "Sagar Patel", email = "patel.sagar2611@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi[standard]>=0.143.3",
+]
 
 [project.scripts]
 payments-ledger = "payments:main"
@@ -34,6 +36,7 @@ select = [
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",

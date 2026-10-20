@@ -21,7 +21,7 @@ class InMemoryLedgerRepository:
         try:
             return self._accounts[account_id]
         except KeyError:
-            raise AccountNotFoundError(account_id) from None
+            raise AccountNotFoundError(f"account {account_id} not found.") from None
 
     async def save_account(self, account: Account) -> None:
         self._accounts[account.id] = account
@@ -30,7 +30,7 @@ class InMemoryLedgerRepository:
         try:
             return self._transfers[transfer_id]
         except KeyError:
-            raise TransferNotFoundError(transfer_id) from None
+            raise TransferNotFoundError(f"transfer {transfer_id} not found.") from None
 
     async def save_transfer(self, transfer: Transfer) -> None:
         await self.get_account(transfer.destination_id)

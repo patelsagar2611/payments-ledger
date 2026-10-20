@@ -2,16 +2,16 @@ import uuid
 from typing import Protocol
 
 from payments.domain.account import Account
-from payments.domain.errors import ConflictError, DomainError
+from payments.domain.errors import ConflictError
 from payments.domain.money import Money
 from payments.domain.transfer import Transfer
 
 
-class AccountNotFoundError(DomainError, LookupError):
+class AccountNotFoundError(LookupError):
     """No account exists with the given id."""
 
 
-class TransferNotFoundError(DomainError, LookupError):
+class TransferNotFoundError(LookupError):
     """No transfer exists with the given id."""
 
 
