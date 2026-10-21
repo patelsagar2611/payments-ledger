@@ -1,20 +1,6 @@
 import uuid
-from collections.abc import AsyncIterator
 
-import pytest
-from httpx import ASGITransport, AsyncClient
-
-from payments.api.app import create_app
-from payments.ledger.in_memory_repository import InMemoryLedgerRepository
-
-
-@pytest.fixture
-async def client() -> AsyncIterator[AsyncClient]:
-    app = create_app(InMemoryLedgerRepository())
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as http_client:
-        yield http_client
+from httpx import AsyncClient
 
 
 async def test_get_unknown_account_returns_404(client: AsyncClient) -> None:
@@ -84,6 +70,38 @@ async def test_create_invalid_account(client: AsyncClient) -> None:
             "currency": "INR",
             "kind": "CUSTOMER",
             "requires_funds": True,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+async def test_new_account_has_zero_balance(client: AsyncClient) -> None:
+    created = await client.post(
+        "/accounts",
+        json={
+            "name": "test_account",
+            "currency": "INR",
+            "kind": "CUSTOMER",
+            "requires_funds": True,
+        },
+    )
+
+    response = await client.get(f"/accounts/{created.json()['id']}/balance")
+
+    assert response.status_code == 200
+    assert response.json() == {"amount_minor": 0, "currency": "INR"}
+
+
+async def test_new_account_bool_passed_as_string(client: AsyncClient) -> None:
+
+    response = await client.post(
+        "/accounts",
+        json={
+            "name": "test_account",
+            "currency": "INR",
+            "kind": "CUSTOMER",
+            "requires_funds": "true",
         },
     )
 

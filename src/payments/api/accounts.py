@@ -2,9 +2,10 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, StrictBool
 
 from payments.api.dependencies import RepositoryDep
+from payments.api.schemas import MoneyModel
 from payments.domain.account import Account, AccountKind
 from payments.domain.money import Currency
 
@@ -15,7 +16,7 @@ class CreateAccountRequest(BaseModel):
     name: str
     currency: Currency
     kind: AccountKind
-    requires_funds: bool
+    requires_funds: StrictBool
 
 
 class AccountResponse(BaseModel):
@@ -49,3 +50,9 @@ async def get_account(
 ) -> AccountResponse:
     account = await repository.get_account(account_id)
     return AccountResponse.model_validate(account)
+
+
+@router.get("/{account_id}/balance")
+async def get_balance(account_id: uuid.UUID, repository: RepositoryDep) -> MoneyModel:
+    balance = await repository.get_balance(account_id)
+    return MoneyModel.model_validate(balance)

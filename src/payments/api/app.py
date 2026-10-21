@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from payments.api import accounts
+from payments.api import accounts, transfers
 from payments.api.errors import register_exception_handlers
 from payments.ledger.in_memory_repository import InMemoryLedgerRepository
 from payments.ledger.ledger_repository import LedgerRepository
@@ -14,4 +14,5 @@ def create_app(repository: LedgerRepository | None = None) -> FastAPI:
     )
     register_exception_handlers(app)
     app.include_router(accounts.router)
+    app.include_router(transfers.router)
     return app
