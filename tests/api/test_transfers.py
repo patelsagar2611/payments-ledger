@@ -172,3 +172,77 @@ async def test_create_valid_transfer(
     assert response_balance.status_code == 200
 
     assert response_balance.json() == {"amount_minor": 5000, "currency": "INR"}
+
+
+async def test_transfer_validate_get(
+    client: AsyncClient, customer_id: uuid.UUID, system_id: uuid.UUID
+) -> None:
+
+    response = await client.post(
+        "/transfers",
+        json={
+            "source_id": str(system_id),
+            "destination_id": str(customer_id),
+            "amount": {"amount_minor": 5000, "currency": "INR"},
+        },
+    )
+
+    assert response.status_code == 201
+
+    body = response.json()
+    assert "id" in body
+
+    response_get = await client.get(f"/transfers/{body['id']}")
+
+    assert response_get.status_code == 200
+
+    assert body == response_get.json()
+
+
+async def test_get_invalid_transfer(client: AsyncClient) -> None:
+
+    random_id = uuid.uuid4()
+
+    response = await client.get(f"/transfers/{random_id}")
+
+    assert response.status_code == 404
+
+
+async def test_get_transfer_entries(
+    client: AsyncClient, customer_id: uuid.UUID, system_id: uuid.UUID
+) -> None:
+
+    response = await client.post(
+        "/transfers",
+        json={
+            "source_id": str(system_id),
+            "destination_id": str(customer_id),
+            "amount": {"amount_minor": 5000, "currency": "INR"},
+        },
+    )
+
+    assert response.status_code == 201
+
+    body = response.json()
+    assert "id" in body
+    assert "entries" in body
+
+    assert len(body["entries"]) == 2
+
+    found_entries = 0
+    for entry in body["entries"]:
+        assert "account_id" in entry
+        assert "amount" in entry
+
+        if (
+            entry["account_id"] == str(system_id)
+            and entry["amount"]["amount_minor"] == -5000
+        ):
+            found_entries += 1
+        if (
+            entry["account_id"] == str(customer_id)
+            and entry["amount"]["amount_minor"] == 5000
+        ):
+            found_entries += 1
+
+    assert found_entries == 2

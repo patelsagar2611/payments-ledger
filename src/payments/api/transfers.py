@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict
@@ -17,6 +18,15 @@ class CreateTransferRequest(BaseModel):
     destination_id: uuid.UUID
 
 
+class EntryModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    account_id: uuid.UUID
+    amount: MoneyModel
+    created_at: datetime
+
+
 class TransferResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -25,6 +35,7 @@ class TransferResponse(BaseModel):
     destination_id: uuid.UUID
     amount: MoneyModel
     status: TransferStatus
+    entries: list[EntryModel]
 
 
 @router.post("", status_code=201)
@@ -42,3 +53,10 @@ async def create_transfer(
 
     return TransferResponse.model_validate(transfer)
 
+
+@router.get("/{transfer_id}")
+async def get_transfer(
+    transfer_id: uuid.UUID, repository: RepositoryDep
+) -> TransferResponse:
+    transfer = await repository.get_transfer(transfer_id)
+    return TransferResponse.model_validate(transfer)
