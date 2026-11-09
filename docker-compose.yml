@@ -1,0 +1,16 @@
+# Local development only. These credentials are never used in a deployed environment.
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ledger
+      POSTGRES_PASSWORD: ledger
+      POSTGRES_DB: ledger
+    ports:
+      # host:container. Bound to localhost so the database is not reachable from the network.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
