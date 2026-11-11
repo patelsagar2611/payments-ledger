@@ -9,7 +9,6 @@ from collections.abc import Sequence
 
 from alembic import op
 ${imports if imports else ""}
-
 # revision identifiers, used by Alembic.
 revision: str = ${repr(up_revision)}
 down_revision: str | Sequence[str] | None = ${repr(down_revision)}
