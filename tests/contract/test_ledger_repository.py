@@ -107,7 +107,6 @@ async def test_account_save(repo: LedgerRepository, customer: Account) -> None:
     assert customer_acc == customer
 
 
-@pytest.mark.postgres_pending
 async def test_valid_transfer_funds_to_customer(
     repo: LedgerRepository, customer: Account, system: Account
 ) -> None:
@@ -206,7 +205,6 @@ async def test_invalid_transfer_funds_from_unknown_account(
     assert system_balance == Money(0, Currency.INR)
 
 
-@pytest.mark.postgres_pending
 async def test_transfer_save_and_get(
     repo: LedgerRepository, customer: Account, system: Account
 ) -> None:

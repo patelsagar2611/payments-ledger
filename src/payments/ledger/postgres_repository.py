@@ -5,8 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from payments.domain.account import Account, AccountKind
 from payments.domain.money import Currency, Money
-from payments.domain.transfer import Transfer
-from payments.ledger.ledger_repository import AccountNotFoundError
+from payments.domain.transfer import Entry, Transfer, TransferStatus
+from payments.ledger.ledger_repository import (
+    AccountNotFoundError,
+    TransferNotFoundError,
+)
 
 
 class PostgresLedgerRepository:
@@ -90,7 +93,101 @@ class PostgresLedgerRepository:
         return Money(row.balance, Currency(row.currency))
 
     async def get_transfer(self, transfer_id: uuid.UUID) -> Transfer:
-        raise NotImplementedError
+        async with self._engine.begin() as conn:
+            transfer_result = await conn.execute(
+                text(
+                    """
+                    SELECT
+                        currency, amount_minor, source_id,
+                        destination_id, status, created_at
+                    FROM transfers
+                    WHERE id = :id
+                    """
+                ),
+                {"id": transfer_id},
+            )
+            t_row = transfer_result.one_or_none()
+
+            if t_row is None:
+                raise TransferNotFoundError(f"transfer {transfer_id} not found.")
+
+            entry_result = await conn.execute(
+                text(
+                    """
+                    SELECT id, account_id, amount_minor, currency, created_at
+                    FROM entries
+                    WHERE transfer_id = :transfer_id
+                    ORDER BY amount_minor
+                    """
+                ),
+                {"transfer_id": transfer_id},
+            )
+            entry_rows = entry_result.all()
+
+        entries = tuple(
+            Entry(
+                id=row.id,
+                account_id=row.account_id,
+                transfer_id=transfer_id,
+                amount=Money(row.amount_minor, Currency(row.currency)),
+                created_at=row.created_at,
+            )
+            for row in entry_rows
+        )
+
+        return Transfer(
+            id=transfer_id,
+            amount=Money(t_row.amount_minor, Currency(t_row.currency)),
+            source_id=t_row.source_id,
+            destination_id=t_row.destination_id,
+            status=TransferStatus(t_row.status),
+            entries=entries,
+            created_at=t_row.created_at,
+        )
 
     async def save_transfer(self, transfer: Transfer) -> None:
-        raise NotImplementedError
+        async with self._engine.begin() as conn:
+            await conn.execute(
+                text(
+                    """
+                    INSERT INTO transfers
+                        (id, amount_minor, currency, source_id, destination_id,
+                         status, created_at)
+                    VALUES
+                        (:id, :amount_minor, :currency, :source_id, :destination_id,
+                         :status, :created_at)
+                    """
+                ),
+                {
+                    "id": transfer.id,
+                    "amount_minor": transfer.amount.amount_minor,
+                    "currency": transfer.amount.currency,
+                    "source_id": transfer.source_id,
+                    "destination_id": transfer.destination_id,
+                    "status": transfer.status,
+                    "created_at": transfer.created_at,
+                },
+            )
+            await conn.execute(
+                text(
+                    """
+                    INSERT INTO entries
+                        (id, transfer_id, account_id, amount_minor, currency,
+                         created_at)
+                    VALUES
+                        (:id, :transfer_id, :account_id, :amount_minor, :currency,
+                         :created_at)
+                    """
+                ),
+                [
+                    {
+                        "id": entry.id,
+                        "transfer_id": entry.transfer_id,
+                        "account_id": entry.account_id,
+                        "amount_minor": entry.amount.amount_minor,
+                        "currency": entry.amount.currency,
+                        "created_at": entry.created_at,
+                    }
+                    for entry in transfer.entries
+                ],
+            )
