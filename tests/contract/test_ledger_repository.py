@@ -1,7 +1,9 @@
 import asyncio
 import uuid
+from collections.abc import AsyncIterator
 
 import pytest
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from payments.domain.account import Account, AccountKind
 from payments.domain.money import Currency, Money
@@ -13,11 +15,23 @@ from payments.ledger.ledger_repository import (
     LedgerRepository,
     TransferNotFoundError,
 )
+from payments.ledger.postgres_repository import PostgresLedgerRepository
 
 
-@pytest.fixture
-def repo() -> LedgerRepository:
-    return InMemoryLedgerRepository()
+@pytest.fixture(params=["in_memory", "postgres"])
+async def repo(
+    request: pytest.FixtureRequest, postgres_url: str
+) -> AsyncIterator[LedgerRepository]:
+    if request.param == "in_memory":
+        yield InMemoryLedgerRepository()
+        return
+
+    if request.node.get_closest_marker("postgres_pending"):
+        pytest.skip("not implemented in PostgresLedgerRepository")
+
+    engine = create_async_engine(postgres_url)
+    yield PostgresLedgerRepository(engine)
+    await engine.dispose()
 
 
 @pytest.fixture
@@ -93,6 +107,7 @@ async def test_account_save(repo: LedgerRepository, customer: Account) -> None:
     assert customer_acc == customer
 
 
+@pytest.mark.postgres_pending
 async def test_valid_transfer_funds_to_customer(
     repo: LedgerRepository, customer: Account, system: Account
 ) -> None:
@@ -111,6 +126,7 @@ async def test_valid_transfer_funds_to_customer(
     assert customer_balance == Money(500, Currency.INR)
 
 
+@pytest.mark.postgres_pending
 async def test_invalid_transfer_funds_to_merchant(
     repo: LedgerRepository,
     customer: Account,
@@ -134,6 +150,7 @@ async def test_invalid_transfer_funds_to_merchant(
         await repo.get_transfer(credit_merchant.id)
 
 
+@pytest.mark.postgres_pending
 async def test_valid_transfer_funds_to_merchant(
     repo: LedgerRepository,
     customer: Account,
@@ -155,6 +172,7 @@ async def test_valid_transfer_funds_to_merchant(
     assert customer_balance == Money(0, Currency.INR)
 
 
+@pytest.mark.postgres_pending
 async def test_invalid_transfer_funds_to_unknown_account(
     repo: LedgerRepository, customer: Account, system: Account
 ) -> None:
@@ -171,6 +189,7 @@ async def test_invalid_transfer_funds_to_unknown_account(
     assert system_balance == Money(0, Currency.INR)
 
 
+@pytest.mark.postgres_pending
 async def test_invalid_transfer_funds_from_unknown_account(
     repo: LedgerRepository, customer: Account, system: Account
 ) -> None:
@@ -187,6 +206,7 @@ async def test_invalid_transfer_funds_from_unknown_account(
     assert system_balance == Money(0, Currency.INR)
 
 
+@pytest.mark.postgres_pending
 async def test_transfer_save_and_get(
     repo: LedgerRepository, customer: Account, system: Account
 ) -> None:
@@ -206,6 +226,7 @@ async def test_transfer_save_and_get(
         await repo.get_transfer(uuid.uuid4())
 
 
+@pytest.mark.postgres_pending
 async def test_concurrent_transfers(
     repo: LedgerRepository,
     customer: Account,

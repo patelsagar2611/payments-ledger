@@ -27,6 +27,8 @@ module-name = "payments"
 [tool.mypy]
 strict = true
 warn_unused_ignores = true
+explicit_package_bases = true
+mypy_path = "src"
 
 [tool.ruff.lint]
 select = [
@@ -44,7 +46,11 @@ dev = [
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "ruff>=0.16.10",
+    "testcontainers[postgres]>=4.15.0",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+markers = [
+    "postgres_pending: skip this contract test for the Postgres repository",
+]
