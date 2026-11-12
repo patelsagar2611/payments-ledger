@@ -125,7 +125,6 @@ async def test_valid_transfer_funds_to_customer(
     assert customer_balance == Money(500, Currency.INR)
 
 
-@pytest.mark.postgres_pending
 async def test_invalid_transfer_funds_to_merchant(
     repo: LedgerRepository,
     customer: Account,
@@ -149,7 +148,6 @@ async def test_invalid_transfer_funds_to_merchant(
         await repo.get_transfer(credit_merchant.id)
 
 
-@pytest.mark.postgres_pending
 async def test_valid_transfer_funds_to_merchant(
     repo: LedgerRepository,
     customer: Account,
@@ -171,7 +169,6 @@ async def test_valid_transfer_funds_to_merchant(
     assert customer_balance == Money(0, Currency.INR)
 
 
-@pytest.mark.postgres_pending
 async def test_invalid_transfer_funds_to_unknown_account(
     repo: LedgerRepository, customer: Account, system: Account
 ) -> None:
@@ -188,7 +185,6 @@ async def test_invalid_transfer_funds_to_unknown_account(
     assert system_balance == Money(0, Currency.INR)
 
 
-@pytest.mark.postgres_pending
 async def test_invalid_transfer_funds_from_unknown_account(
     repo: LedgerRepository, customer: Account, system: Account
 ) -> None:

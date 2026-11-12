@@ -8,6 +8,7 @@ from payments.domain.money import Currency, Money
 from payments.domain.transfer import Entry, Transfer, TransferStatus
 from payments.ledger.ledger_repository import (
     AccountNotFoundError,
+    InsufficientFundsError,
     TransferNotFoundError,
 )
 
@@ -147,6 +148,41 @@ class PostgresLedgerRepository:
 
     async def save_transfer(self, transfer: Transfer) -> None:
         async with self._engine.begin() as conn:
+            result = await conn.execute(
+                text(
+                    """
+                    SELECT id, requires_funds
+                    FROM accounts
+                    WHERE id IN (:source_id, :destination_id)
+                    """
+                ),
+                {
+                    "source_id": transfer.source_id,
+                    "destination_id": transfer.destination_id,
+                },
+            )
+            accounts = {row.id: row for row in result.all()}
+            if transfer.destination_id not in accounts:
+                raise AccountNotFoundError(
+                    f"account {transfer.destination_id} not found."
+                )
+            if transfer.source_id not in accounts:
+                raise AccountNotFoundError(f"account {transfer.source_id} not found.")
+            if accounts[transfer.source_id].requires_funds:
+                balance_result = await conn.execute(
+                    text(
+                        """
+                        SELECT COALESCE(sum(amount_minor), 0)::bigint
+                        FROM entries
+                        WHERE account_id = :id
+                        """
+                    ),
+                    {"id": transfer.source_id},
+                )
+                balance = balance_result.scalar_one()
+                if balance < transfer.amount.amount_minor:
+                    raise InsufficientFundsError(transfer.source_id)
+
             await conn.execute(
                 text(
                     """
