@@ -26,10 +26,20 @@ async def repo(
         yield InMemoryLedgerRepository()
         return
 
-    if request.node.get_closest_marker("postgres_pending"):
-        pytest.skip("not implemented in PostgresLedgerRepository")
-
     engine = create_async_engine(postgres_url)
+
+    async def open_connection() -> None:
+        async with engine.connect():
+            await asyncio.sleep(0.05)
+
+    # pool must already hold two warm connections,
+    # otherwise concurrent calls tests does not fail.
+    # without this, mostly one warm connection would be there.
+    # with 2 concurrent calls, 1st call will grab one warm connection,
+    # while the second connection is ready, 1st would have
+    # committed to postgres and test won't fail.
+    await asyncio.gather(open_connection(), open_connection())
+
     yield PostgresLedgerRepository(engine)
     await engine.dispose()
 
@@ -220,7 +230,6 @@ async def test_transfer_save_and_get(
         await repo.get_transfer(uuid.uuid4())
 
 
-@pytest.mark.postgres_pending
 async def test_concurrent_transfers(
     repo: LedgerRepository,
     customer: Account,

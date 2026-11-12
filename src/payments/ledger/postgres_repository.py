@@ -169,6 +169,14 @@ class PostgresLedgerRepository:
             if transfer.source_id not in accounts:
                 raise AccountNotFoundError(f"account {transfer.source_id} not found.")
             if accounts[transfer.source_id].requires_funds:
+                await conn.execute(
+                    text(
+                        """
+                        SELECT id FROM accounts where id = :id FOR UPDATE
+                        """
+                    ),
+                    {"id": transfer.source_id},
+                )
                 balance_result = await conn.execute(
                     text(
                         """
