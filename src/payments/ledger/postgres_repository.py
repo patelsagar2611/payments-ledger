@@ -189,7 +189,9 @@ class PostgresLedgerRepository:
                 )
                 balance = balance_result.scalar_one()
                 if balance < transfer.amount.amount_minor:
-                    raise InsufficientFundsError(transfer.source_id)
+                    raise InsufficientFundsError(
+                        f"account {transfer.source_id} has insufficient balance."
+                    )
 
             await conn.execute(
                 text(

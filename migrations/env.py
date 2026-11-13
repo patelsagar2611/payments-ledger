@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -9,6 +10,13 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+current_url = config.get_main_option("sqlalchemy.url")
+if current_url is None:
+    url = os.environ.get("DATABASE_URL")
+    if not url:
+        raise RuntimeError("DATABASE_URL is not set; refusing to start.")
+    config.set_main_option("sqlalchemy.url", url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

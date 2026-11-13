@@ -38,7 +38,9 @@ class InMemoryLedgerRepository:
         if source_acc.requires_funds:
             balance = await self.get_balance(source_acc.id)
             if balance.amount_minor < transfer.amount.amount_minor:
-                raise InsufficientFundsError(source_acc.id)
+                raise InsufficientFundsError(
+                    f"account {source_acc.id} has insufficient balance."
+                )
         self._transfers[transfer.id] = transfer
 
     async def get_balance(self, account_id: uuid.UUID) -> Money:

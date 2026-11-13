@@ -94,6 +94,9 @@ async def test_transfer_unfunded_source_account_returns_409(
     )
 
     assert response.status_code == 409
+    assert response.json() == {
+        "detail": f"account {customer_id} has insufficient balance."
+    }
 
 
 async def test_transfer_different_currency_source_account_returns_422(
