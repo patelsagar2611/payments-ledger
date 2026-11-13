@@ -169,10 +169,15 @@ class PostgresLedgerRepository:
             if transfer.source_id not in accounts:
                 raise AccountNotFoundError(f"account {transfer.source_id} not found.")
             if accounts[transfer.source_id].requires_funds:
+                # Serialize funds checks per source account: a second transfer
+                # from the same source waits here until this one commits, then
+                # sums the new entries. NO KEY UPDATE rather than UPDATE because
+                # it doesn't block the FOR KEY SHARE locks that foreign-key
+                # checks take, so opposite-direction transfers can't deadlock.
                 await conn.execute(
                     text(
                         """
-                        SELECT id FROM accounts where id = :id FOR UPDATE
+                        SELECT id FROM accounts where id = :id FOR NO KEY UPDATE
                         """
                     ),
                     {"id": transfer.source_id},

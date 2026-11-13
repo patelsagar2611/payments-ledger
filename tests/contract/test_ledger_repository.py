@@ -258,3 +258,37 @@ async def test_concurrent_transfers(
     assert success == 1
     assert fails == 1
     assert customer_balance == Money(20, Currency.INR)
+
+
+async def test_opposite_concurrent_transfers_both_succeed(
+    repo: LedgerRepository,
+    customer: Account,
+    system: Account,
+    merchant: Account,
+    fund_customer: None,
+) -> None:
+    await repo.save_account(merchant)
+
+    credit_merchant = Transfer.create(
+        amount=Money(100, Currency.INR), source=system, destination=merchant
+    )
+    await repo.save_transfer(credit_merchant)
+
+    credit_cust_to_mer = Transfer.create(
+        amount=Money(10, Currency.INR), source=customer, destination=merchant
+    )
+    credit_mer_to_cust = Transfer.create(
+        amount=Money(10, Currency.INR), source=merchant, destination=customer
+    )
+    results = await asyncio.gather(
+        repo.save_transfer(credit_cust_to_mer),
+        repo.save_transfer(credit_mer_to_cust),
+        return_exceptions=True,
+    )
+
+    customer_balance = await repo.get_balance(customer.id)
+    merchant_balance = await repo.get_balance(merchant.id)
+
+    assert list(results) == [None, None]
+    assert customer_balance == Money(100, Currency.INR)
+    assert merchant_balance == Money(100, Currency.INR)
