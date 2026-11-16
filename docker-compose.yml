@@ -11,6 +11,23 @@ services:
       - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # "Running" is not "ready": Postgres needs a few seconds after start before it accepts
+    # connections. pg_isready exits 0 once it does, and Compose then marks the service healthy.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledger -d ledger"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ledger:ledger@db:5432/ledger
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:
