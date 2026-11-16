@@ -1,0 +1,21 @@
+# Files never sent to the Docker builder.
+# Patterns are relative to this folder: `.venv` matches only ./.venv,
+# so anything that can appear in subfolders needs a `**/` prefix.
+
+# Local environment (built for this machine, recreated inside the image)
+.venv
+
+# Secrets: must never end up in an image
+.env
+
+# Caches and compiled bytecode
+.mypy_cache
+.ruff_cache
+.pytest_cache
+**/__pycache__
+
+# Version control history
+.git
+
+# Run in CI on the source before the image is built, never inside it
+tests
