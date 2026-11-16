@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from payments.api import accounts, transfers
+from payments.api import accounts, health, transfers
 from payments.api.errors import register_exception_handlers
 from payments.ledger.ledger_repository import LedgerRepository
 from payments.ledger.postgres_repository import PostgresLedgerRepository
@@ -38,4 +38,5 @@ def create_app(repository: LedgerRepository | None = None) -> FastAPI:
     register_exception_handlers(app)
     app.include_router(accounts.router)
     app.include_router(transfers.router)
+    app.include_router(health.router)
     return app
