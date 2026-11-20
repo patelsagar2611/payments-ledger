@@ -1,6 +1,6 @@
 # ---- stage 1: build ----
 # Base image: a full Debian system with Python 3.13 already installed.
-FROM python:3.13 AS builder
+FROM python:3.13@sha256:9ffe84122ce74ebdffe2e0e6b946c9dd95d0bf3463f6eb1006b4dc6fefe36d01 AS builder
 
 # Every following instruction runs inside /app in the image.
 WORKDIR /app
@@ -20,7 +20,7 @@ COPY alembic.ini README.md ./
 RUN uv sync --frozen --no-dev
 
 # ---- stage 2: runtime ----
-FROM python:3.13-slim
+FROM python:3.13-slim@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
 WORKDIR /app
 
 RUN useradd --create-home appuser
