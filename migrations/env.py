@@ -1,5 +1,4 @@
 import asyncio
-import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -7,16 +6,18 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from payments.config import database_url
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
 current_url = config.get_main_option("sqlalchemy.url")
 if current_url is None:
-    url = os.environ.get("DATABASE_URL")
-    if not url:
-        raise RuntimeError("DATABASE_URL is not set; refusing to start.")
-    config.set_main_option("sqlalchemy.url", url)
+    url = database_url().render_as_string(hide_password=False)
+    # Alembic's config is a configparser, where % starts an interpolation.
+    # The escaped password contains %40 etc., so double each % to store it.
+    config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

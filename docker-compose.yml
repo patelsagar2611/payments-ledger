@@ -24,7 +24,12 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://ledger:ledger@db:5432/ledger
+      # DB_PORT is left at its default, 5432: inside the Compose network the
+      # api talks to the db container directly, not through the 5433 host port.
+      DB_HOST: db
+      DB_NAME: ledger
+      DB_USER: ledger
+      DB_PASSWORD: ledger
     depends_on:
       db:
         condition: service_healthy
